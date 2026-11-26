@@ -14,13 +14,35 @@
    "floor": 1,
    "available": "Now",
    "total_monthly_13mo": 2387.65,
-   "tags": [],
-   "view": "Unknown",
-   "porch": "Unknown",
+   "tags": [
+    "Balcony",
+    "Golf Course View 7"
+   ],
+   "view": "Golf course",
+   "porch": "Balcony",
    "top_floor": false,
-   "meets_criteria": null,
-   "movein_prices": [],
-   "base_rent": null
+   "meets_criteria": true,
+   "movein_prices": [
+    {
+     "move_in": "2026-12-03",
+     "base_rent": 2313.0,
+     "total_by_term": {
+      "13": 2387.65,
+      "12": 2387.65,
+      "11": 2387.65,
+      "10": 2387.65,
+      "9": 2387.65,
+      "6": 2637.65,
+      "4": 2637.65
+     }
+    },
+    {
+     "move_in": "2026-12-10",
+     "base_rent": 2387.0,
+     "total_by_term": {}
+    }
+   ],
+   "base_rent": 2313.0
   },
   {
    "unit": "G19",
@@ -50,9 +72,11 @@
    "floor": 3,
    "available": "Now",
    "total_monthly_13mo": 1927.65,
-   "tags": [],
+   "tags": [
+    "Juliet Balcony"
+   ],
    "view": "Unknown",
-   "porch": "Unknown",
+   "porch": "Juliet",
    "top_floor": false,
    "meets_criteria": null,
    "movein_prices": [],
@@ -68,11 +92,14 @@
    "floor": 1,
    "available": "Now",
    "total_monthly_13mo": 2512.65,
-   "tags": [],
-   "view": "Unknown",
-   "porch": "Unknown",
+   "tags": [
+    "Balcony",
+    "Pool view"
+   ],
+   "view": "Pool",
+   "porch": "Balcony",
    "top_floor": false,
-   "meets_criteria": null,
+   "meets_criteria": false,
    "movein_prices": [],
    "base_rent": null
   },
@@ -86,11 +113,14 @@
    "floor": 2,
    "available": "Now",
    "total_monthly_13mo": 2058.65,
-   "tags": [],
-   "view": "Unknown",
-   "porch": "Unknown",
+   "tags": [
+    "Balcony",
+    "Pool view"
+   ],
+   "view": "Pool",
+   "porch": "Balcony",
    "top_floor": false,
-   "meets_criteria": null,
+   "meets_criteria": false,
    "movein_prices": [],
    "base_rent": null
   },
@@ -122,11 +152,15 @@
    "floor": 4,
    "available": "Now",
    "total_monthly_13mo": 2145.65,
-   "tags": [],
-   "view": "Unknown",
-   "porch": "Unknown",
+   "tags": [
+    "Balcony",
+    "Pool view",
+    "Top Floor"
+   ],
+   "view": "Pool",
+   "porch": "Balcony",
    "top_floor": false,
-   "meets_criteria": null,
+   "meets_criteria": false,
    "movein_prices": [],
    "base_rent": null
   },
@@ -140,11 +174,15 @@
    "floor": 4,
    "available": "Now",
    "total_monthly_13mo": 2199.65,
-   "tags": [],
-   "view": "Unknown",
-   "porch": "Unknown",
+   "tags": [
+    "Golf Course View 6",
+    "Juliet Balcony",
+    "Top Floor"
+   ],
+   "view": "Golf course",
+   "porch": "Juliet",
    "top_floor": false,
-   "meets_criteria": null,
+   "meets_criteria": false,
    "movein_prices": [],
    "base_rent": null
   },
@@ -158,11 +196,14 @@
    "floor": 3,
    "available": "Now",
    "total_monthly_13mo": 2198.65,
-   "tags": [],
-   "view": "Unknown",
-   "porch": "Unknown",
+   "tags": [
+    "Balcony",
+    "Pool view"
+   ],
+   "view": "Pool",
+   "porch": "Balcony",
    "top_floor": false,
-   "meets_criteria": null,
+   "meets_criteria": false,
    "movein_prices": [],
    "base_rent": null
   },
@@ -176,9 +217,12 @@
    "floor": 5,
    "available": "Dec 04, 2026",
    "total_monthly_13mo": 1619.65,
-   "tags": [],
+   "tags": [
+    "Juliet Balcony",
+    "Top Floor"
+   ],
    "view": "Unknown",
-   "porch": "Unknown",
+   "porch": "Juliet",
    "top_floor": true,
    "meets_criteria": null,
    "movein_prices": [],
@@ -194,11 +238,15 @@
    "floor": 5,
    "available": "Dec 08, 2026",
    "total_monthly_13mo": 1644.65,
-   "tags": [],
-   "view": "Unknown",
-   "porch": "Unknown",
+   "tags": [
+    "Golf Course View 8",
+    "Juliet Balcony",
+    "Top Floor"
+   ],
+   "view": "Golf course",
+   "porch": "Juliet",
    "top_floor": true,
-   "meets_criteria": null,
+   "meets_criteria": false,
    "movein_prices": [],
    "base_rent": null
   },
@@ -230,32 +278,22 @@
    "floor": 4,
    "available": "Dec 01, 2026",
    "total_monthly_13mo": 1574.65,
-   "tags": [],
+   "tags": [
+    "Juliet Balcony"
+   ],
    "view": "Unknown",
-   "porch": "Unknown",
+   "porch": "Juliet",
    "top_floor": false,
    "meets_criteria": null,
    "movein_prices": [],
    "base_rent": null
   }
  ],
- "errors": [
-  "floor plan page failed: https://www.park35onclairmont.com/floorplans/birmingham-AL/park-35-on-clairmont-mt/westside-i-1040019-1/",
-  "floor plan page failed: https://www.park35onclairmont.com/floorplans/birmingham-AL/park-35-on-clairmont-mt/forestpark-h-1040021-1/",
-  "floor plan page failed: https://www.park35onclairmont.com/floorplans/birmingham-AL/park-35-on-clairmont-mt/ensley-c-1040022-1/",
-  "floor plan page failed: https://www.park35onclairmont.com/floorplans/birmingham-AL/park-35-on-clairmont-mt/magnolia-f-1040023-1/",
-  "floor plan page failed: https://www.park35onclairmont.com/floorplans/birmingham-AL/park-35-on-clairmont-mt/hollywood-b-1040026-1/",
-  "floor plan page failed: https://www.park35onclairmont.com/floorplans/birmingham-AL/park-35-on-clairmont-mt/hollywood-c-1040029-1/",
-  "floor plan page failed: https://www.park35onclairmont.com/floorplans/birmingham-AL/park-35-on-clairmont-mt/southside-l-1040036-1/",
-  "floor plan page failed: https://www.park35onclairmont.com/floorplans/birmingham-AL/park-35-on-clairmont-mt/avondale-c-1040037-1/",
-  "floor plan page failed: https://www.park35onclairmont.com/floorplans/birmingham-AL/park-35-on-clairmont-mt/lakeview-a-1040040-1/",
-  "floor plan page failed: https://www.park35onclairmont.com/floorplans/birmingham-AL/park-35-on-clairmont-mt/crestline-l-1040053-1/",
-  "all rent-calculator requests failed"
- ],
+ "errors": [],
  "fetch_stats": {
   "direct_ok": 0,
   "direct_blocked": 0,
-  "proxy_ok": 1,
-  "proxy_fail": 1
+  "proxy_ok": 2,
+  "proxy_fail": 0
  }
 }
