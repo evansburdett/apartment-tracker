@@ -119,7 +119,10 @@ class Fetcher:
     # ---- batch mode: one real-browser ScrapingBee session fetches many URLs ----
     BATCH_JS = r"""
 (async () => {
-  const jobs = JSON.parse(atob('%JOBS%'));
+  const spec = JSON.parse(atob('%JOBS%'));
+  const jobs = (spec.urls || []).map(u => ({url: u}));
+  for (const [us, fp] of (spec.calc_units || [])) for (const d of (spec.dates || []))
+    jobs.push({url: location.origin + '/?module=check_availability&is_secure=1&property[id]=%PID%&action=view_rent_calculator&unit_space[id]=' + us + '&property_floorplan[id]=' + fp + '&move_in_date=' + d + '&occupancy_type=conventional', xhr: true});
   const out = {};
   if (%MAP%) {
     // Open the Interactive Map tab and read the unit cards from its same-origin iframe.
@@ -160,11 +163,11 @@ class Fetcher:
 })();
 """
 
-    def batch(self, jobs: list[dict], start_url: str = BASE + "/", read_map: bool = False) -> dict[str, str]:
+    def batch(self, jobs, start_url: str = BASE + "/", read_map: bool = False) -> dict[str, str]:
         got, _ = self.batch_with_page(jobs, start_url, read_map)
         return got
 
-    def batch_with_page(self, jobs: list[dict], start_url: str = BASE + "/",
+    def batch_with_page(self, jobs, start_url: str = BASE + "/",
                         read_map: bool = False) -> tuple[dict[str, str], str | None]:
         """Open start_url in ScrapingBee's browser (clears Cloudflare), then fetch
         every job URL from inside the page with the site's own cookies.
@@ -172,8 +175,11 @@ class Fetcher:
         if not self.sb_key:
             return {}, None
         import base64
-        js = (self.BATCH_JS.replace("%JOBS%", base64.b64encode(json.dumps(jobs).encode()).decode())
+        spec = jobs if isinstance(jobs, dict) else {"urls": [j["url"] for j in jobs]}
+        js = (self.BATCH_JS.replace("%JOBS%", base64.b64encode(json.dumps(spec, separators=(",", ":")).encode()).decode())
+              .replace("%PID%", PROPERTY_ID)
               .replace("%MAP%", "true" if read_map else "false"))
+        js = "\n".join(l.strip() for l in js.splitlines() if l.strip() and not l.strip().startswith("//"))
         scenario = {"instructions": [{"wait": 2000}, {"evaluate": js}, {"wait_for": "#claude-done"}]}
         params = {"api_key": self.sb_key, "url": start_url, "render_js": "true", "premium_proxy": "true",
                   "country_code": "us", "block_resources": "false", "timeout": "140000",
@@ -422,7 +428,12 @@ def main() -> int:
                 snapshot["errors"].append(f"no floor plan URL for fp {fp_id}")
         move_ins = [(today + dt.timedelta(days=o)).isoformat() for o in MOVE_IN_OFFSETS_DAYS]
         calc_jobs = [{"url": calc_url(u, d), "xhr": True} for u in units if u["beds"] == 2 for d in move_ins]
-        round2 = get_many(fp_jobs + calc_jobs)
+        if snapshot["mode"] == "direct":
+            round2 = get_many(fp_jobs + calc_jobs)
+        else:
+            calc_units = [[u["unit_space_id"], u["floorplan_id"]] for u in units if u["beds"] == 2]
+            round2 = f.batch({"urls": [j["url"] for j in fp_jobs], "calc_units": calc_units, "dates": move_ins},
+                             start_url=FLOORPLAN_INDEX_PAGES[1])
 
         tags_by_unit: dict[str, list[str]] = {}
         for j in fp_jobs:
