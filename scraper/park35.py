@@ -39,7 +39,7 @@ BEANS_MAP = (f"{BASE}/Apartments/module/property_info/action/view_beans_map/"
              f"property%5Bid%5D/{PROPERTY_ID}/?occupancy_type=conventional&is_filter_request=0")
 FLOORPLAN_INDEX_PAGES = [f"{BASE}/", f"{BASE}/birmingham/park-35-on-clairmont-mt/conventional/"]
 DELAY_S = float(os.environ.get("REQUEST_DELAY_S", "4"))
-MOVE_IN_OFFSETS_DAYS = [int(x) for x in os.environ.get("MOVE_IN_OFFSETS", "7,14,21,30,45,60,90").split(",")]
+MOVE_IN_OFFSETS_DAYS = [int(x) for x in os.environ.get("MOVE_IN_OFFSETS", "7,14,30,45,60").split(",")]
 TZ = dt.timezone(dt.timedelta(hours=-6))  # America/Chicago standard time; date only
 
 BLOCK_MARKERS = ("Performing security verification", "Just a moment", "cf-chl", "Verify you are human")
@@ -114,6 +114,64 @@ class Fetcher:
             params["render_js"] = "true"  # second attempt: let ScrapingBee solve JS challenges
         self.stats["proxy_fail"] += 1
         return None
+
+
+    # ---- batch mode: one real-browser ScrapingBee session fetches many URLs ----
+    BATCH_JS = r"""
+(async () => {
+  const jobs = JSON.parse(atob('%JOBS%'));
+  const out = {};
+  let i = 0;
+  async function worker() {
+    while (i < jobs.length) {
+      const j = jobs[i++];
+      try {
+        const r = await fetch(j.url, {credentials: 'include',
+          headers: j.xhr ? {'X-Requested-With': 'XMLHttpRequest'} : {}});
+        out[j.url] = {s: r.status, t: await r.text()};
+      } catch (e) { out[j.url] = {s: 0, t: String(e)}; }
+      await new Promise(res => setTimeout(res, 400));
+    }
+  }
+  await Promise.all([worker(), worker()]);
+  const enc = btoa(unescape(encodeURIComponent(JSON.stringify(out))));
+  const box = document.createElement('div'); box.id = 'claude-out'; box.textContent = enc;
+  document.body.appendChild(box);
+  const done = document.createElement('div'); done.id = 'claude-done'; document.body.appendChild(done);
+})();
+"""
+
+    def batch(self, jobs: list[dict], start_url: str = BASE + "/") -> dict[str, str]:
+        """Open start_url in ScrapingBee's browser (clears Cloudflare), then fetch
+        every job URL from inside the page with the site's own cookies.
+        jobs: [{"url": ..., "xhr": bool}]. Returns {url: body} for 200 responses."""
+        if not self.sb_key or not jobs:
+            return {}
+        import base64
+        js = self.BATCH_JS.replace("%JOBS%", base64.b64encode(json.dumps(jobs).encode()).decode())
+        scenario = {"instructions": [{"evaluate": js}, {"wait_for": "#claude-done"}]}
+        params = {"api_key": self.sb_key, "url": start_url, "render_js": "true", "premium_proxy": "true",
+                  "country_code": "us", "block_resources": "false", "timeout": "140000",
+                  "js_scenario": json.dumps(scenario)}
+        for attempt in range(2):
+            try:
+                r = creq.get("https://app.scrapingbee.com/api/v1/?" + urlencode(params), timeout=180)
+                m = re.search(r'id="claude-out"[^>]*>([A-Za-z0-9+/=\s]+)<', r.text)
+                if r.status_code == 200 and m:
+                    raw = json.loads(base64.b64decode(re.sub(r"\s", "", m.group(1))).decode("utf-8"))
+                    self.stats["proxy_ok"] += 1
+                    got = {u: v["t"] for u, v in raw.items() if v.get("s") == 200 and not self._blocked(200, v["t"])}
+                    bad = {u: v.get("s") for u, v in raw.items() if u not in got}
+                    if bad:
+                        print(f"batch: {len(bad)} job(s) failed, statuses {sorted(set(bad.values()))}", file=sys.stderr)
+                    return got
+                print(f"batch attempt {attempt + 1}: status {r.status_code}, marker={'yes' if m else 'no'}: "
+                      f"{r.text[:300]!r}", file=sys.stderr)
+                save_raw(f"batch_fail_{attempt + 1}.html", r.text)
+            except Exception as e:
+                print(f"batch error {e!r}", file=sys.stderr)
+        self.stats["proxy_fail"] += 1
+        return {}
 
 
 class SiteDown(RuntimeError):
@@ -268,38 +326,81 @@ def parse_calculator(html: str) -> dict:
 
 # ---------- main ----------
 
+def calc_url(u: dict, move_in: str) -> str:
+    return (f"{BASE}/?module=check_availability&is_secure=1&property[id]={PROPERTY_ID}"
+            f"&action=view_rent_calculator&unit_space[id]={u['unit_space_id']}"
+            f"&property_floorplan[id]={u['floorplan_id']}&move_in_date={move_in}&occupancy_type=conventional")
+
+
 def main() -> int:
     today = dt.datetime.now(TZ).date()
     f = Fetcher()
-    snapshot = {"date": today.isoformat(), "property": "Park 35", "status": "ok", "units": [], "errors": []}
+    snapshot = {"date": today.isoformat(), "property": "Park 35", "status": "ok", "mode": None,
+                "units": [], "errors": []}
+
+    def get_many(jobs: list[dict]) -> dict[str, str]:
+        if snapshot["mode"] == "direct":
+            out = {}
+            for j in jobs:
+                h = f.get(j["url"], xhr=j.get("xhr", False))
+                if h:
+                    out[j["url"]] = h
+            return out
+        return f.batch(jobs)
+
     try:
-        beans = f.get(BEANS_MAP)
+        # Probe: one direct request decides the mode for the whole run.
+        f._wait()
+        probe = None
+        try:
+            r = f.session.get(BEANS_MAP, timeout=45)
+            if MAINTENANCE_MARKER in r.text:
+                raise SiteDown("Entrata scheduled maintenance")
+            if not f._blocked(r.status_code, r.text):
+                probe = r.text
+        except SiteDown:
+            raise
+        except Exception as e:
+            print(f"probe error {e!r}", file=sys.stderr)
+        snapshot["mode"] = "direct" if probe else "browser_batch"
+        print(f"mode: {snapshot['mode']}", file=sys.stderr)
+
+        round1 = get_many([{"url": u} for u in FLOORPLAN_INDEX_PAGES] + ([] if probe else [{"url": BEANS_MAP}]))
+        beans = probe or round1.get(BEANS_MAP)
         save_raw("beans_map.html", beans)
         if not beans:
-            raise RuntimeError("beans map fetch failed (blocked and no proxy result)")
+            if any(MAINTENANCE_MARKER in v for v in round1.values()):
+                raise SiteDown("Entrata scheduled maintenance")
+            raise RuntimeError("beans map fetch failed in both direct and browser-batch modes")
         units = parse_beans_map(beans)
         if not units:
             raise RuntimeError("beans map parsed 0 units; parser or page changed (see raw/beans_map.html)")
 
         fp_links: dict[str, str] = {}
-        for page in FLOORPLAN_INDEX_PAGES:
-            h = f.get(page)
-            if h:
-                fp_links.update(parse_floorplan_links(h))
+        for h in round1.values():
+            fp_links.update(parse_floorplan_links(h))
         save_raw("floorplan_links.json", json.dumps(fp_links, indent=1))
 
-        tags_by_unit: dict[str, list[str]] = {}
-        for fp_id in sorted({u["floorplan_id"] for u in units if u["floorplan_id"]}):
-            url = fp_links.get(fp_id)
-            if not url:
+        fp_ids = sorted({u["floorplan_id"] for u in units if u["floorplan_id"]})
+        fp_jobs = []
+        for fp_id in fp_ids:
+            if fp_id in fp_links:
+                fp_jobs.append({"url": fp_links[fp_id]})
+            else:
                 snapshot["errors"].append(f"no floor plan URL for fp {fp_id}")
-                continue
-            h = f.get(url)
+        move_ins = [(today + dt.timedelta(days=o)).isoformat() for o in MOVE_IN_OFFSETS_DAYS]
+        calc_jobs = [{"url": calc_url(u, d), "xhr": True} for u in units if u["beds"] == 2 for d in move_ins]
+        round2 = get_many(fp_jobs + calc_jobs)
+
+        tags_by_unit: dict[str, list[str]] = {}
+        for j in fp_jobs:
+            h = round2.get(j["url"])
+            fp_id = re.search(r"-(\d{6,8})-1/", j["url"]).group(1)
             save_raw(f"floorplan_{fp_id}.html", h)
             if h:
                 tags_by_unit.update(parse_floorplan_tags(h))
             else:
-                snapshot["errors"].append(f"floor plan page blocked: {url}")
+                snapshot["errors"].append(f"floor plan page failed: {j['url']}")
 
         for u in units:
             tags = tags_by_unit.get(u["unit"], [])
@@ -310,23 +411,21 @@ def main() -> int:
             u["meets_criteria"] = (None if (u["view"] == "Unknown" or u["porch"] == "Unknown")
                                    else (not ruled_out and u["porch"] in ("Balcony", "Patio")))
             u["movein_prices"] = []
-            if u["beds"] == 2 and not ruled_out:
-                for off in MOVE_IN_OFFSETS_DAYS:
-                    d = (today + dt.timedelta(days=off)).isoformat()
-                    q = (f"{BASE}/?module=check_availability&is_secure=1&property[id]={PROPERTY_ID}"
-                         f"&action=view_rent_calculator&unit_space[id]={u['unit_space_id']}"
-                         f"&property_floorplan[id]={u['floorplan_id']}&move_in_date={d}&occupancy_type=conventional")
-                    h = f.get(q, xhr=True)
-                    if off == MOVE_IN_OFFSETS_DAYS[0]:
+            if u["beds"] == 2:
+                for d in move_ins:
+                    h = round2.get(calc_url(u, d))
+                    if d == move_ins[0]:
                         save_raw(f"calc_{u['unit']}.html", h)
                     if not h:
                         continue
                     c = parse_calculator(h)
                     if c["base_rent"] or c["total_by_term"]:
                         u["movein_prices"].append({"move_in": d, **c})
-            if u["movein_prices"]:
-                u["base_rent"] = u["movein_prices"][0]["base_rent"]
+            u["base_rent"] = u["movein_prices"][0]["base_rent"] if u["movein_prices"] else None
             snapshot["units"].append(u)
+        n_calc = sum(len(u["movein_prices"]) for u in snapshot["units"])
+        if calc_jobs and n_calc == 0:
+            snapshot["errors"].append("all rent-calculator requests failed")
     except SiteDown as e:
         snapshot["status"] = "site_down"
         snapshot["errors"].append(str(e))
@@ -339,7 +438,7 @@ def main() -> int:
     (DATA / "latest.json").write_text(json.dumps(snapshot, indent=1), encoding="utf-8")
     if snapshot["units"]:
         append_history(snapshot)
-    print(json.dumps({"status": snapshot["status"], "units": len(snapshot["units"]),
+    print(json.dumps({"status": snapshot["status"], "mode": snapshot["mode"], "units": len(snapshot["units"]),
                       "errors": snapshot["errors"], "stats": f.stats}))
     return 0 if snapshot["status"] in ("ok", "site_down") else 1
 
