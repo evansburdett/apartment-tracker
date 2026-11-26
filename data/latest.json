@@ -1,0 +1,16 @@
+{
+ "date": "2026-11-26",
+ "property": "Park 35",
+ "status": "error",
+ "mode": "browser_batch",
+ "units": [],
+ "errors": [
+  "RuntimeError('beans map fetch failed in both direct and browser-batch modes')"
+ ],
+ "fetch_stats": {
+  "direct_ok": 0,
+  "direct_blocked": 0,
+  "proxy_ok": 0,
+  "proxy_fail": 1
+ }
+}
