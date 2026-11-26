@@ -121,6 +121,25 @@ class Fetcher:
 (async () => {
   const jobs = JSON.parse(atob('%JOBS%'));
   const out = {};
+  if (%MAP%) {
+    // Open the Interactive Map tab and read the unit cards from its same-origin iframe.
+    try {
+      const tab = [...document.querySelectorAll('a,button,li,span,div')]
+        .find(e => e.children.length === 0 && /^\s*Interactive Map\s*$/i.test(e.textContent));
+      if (tab) tab.click();
+      let html = null;
+      for (let k = 0; k < 60 && !html; k++) {
+        await new Promise(res => setTimeout(res, 500));
+        for (const f of document.querySelectorAll('iframe')) {
+          try {
+            const d = f.contentDocument;
+            if (d && d.querySelector('[data-url*="unit_space"]')) { html = d.documentElement.outerHTML; break; }
+          } catch (e) {}
+        }
+      }
+      out['__map__'] = {s: html ? 200 : 0, t: html || 'map iframe not found'};
+    } catch (e) { out['__map__'] = {s: 0, t: String(e)}; }
+  }
   let i = 0;
   async function worker() {
     while (i < jobs.length) {
@@ -141,19 +160,21 @@ class Fetcher:
 })();
 """
 
-    def batch(self, jobs: list[dict], start_url: str = BASE + "/") -> dict[str, str]:
-        got, _ = self.batch_with_page(jobs, start_url)
+    def batch(self, jobs: list[dict], start_url: str = BASE + "/", read_map: bool = False) -> dict[str, str]:
+        got, _ = self.batch_with_page(jobs, start_url, read_map)
         return got
 
-    def batch_with_page(self, jobs: list[dict], start_url: str = BASE + "/") -> tuple[dict[str, str], str | None]:
+    def batch_with_page(self, jobs: list[dict], start_url: str = BASE + "/",
+                        read_map: bool = False) -> tuple[dict[str, str], str | None]:
         """Open start_url in ScrapingBee's browser (clears Cloudflare), then fetch
         every job URL from inside the page with the site's own cookies.
         jobs: [{"url": ..., "xhr": bool}]. Returns {url: body} for 200 responses."""
         if not self.sb_key:
             return {}, None
         import base64
-        js = self.BATCH_JS.replace("%JOBS%", base64.b64encode(json.dumps(jobs).encode()).decode())
-        scenario = {"instructions": [{"evaluate": js}, {"wait_for": "#claude-done"}]}
+        js = (self.BATCH_JS.replace("%JOBS%", base64.b64encode(json.dumps(jobs).encode()).decode())
+              .replace("%MAP%", "true" if read_map else "false"))
+        scenario = {"instructions": [{"wait": 2000}, {"evaluate": js}, {"wait_for": "#claude-done"}]}
         params = {"api_key": self.sb_key, "url": start_url, "render_js": "true", "premium_proxy": "true",
                   "country_code": "us", "block_resources": "false", "timeout": "140000",
                   "js_scenario": json.dumps(scenario)}
@@ -374,8 +395,10 @@ def main() -> int:
         if probe:
             round1, beans = get_many(index_jobs), probe
         else:
-            # The map endpoint 403s when fetched from inside a page, so load it as the start page.
-            round1, beans = f.batch_with_page(index_jobs, start_url=BEANS_MAP)
+            # The map endpoint only answers inside the site's own iframe, so open the
+            # floor plans page, click "Interactive Map", and read the iframe's DOM.
+            round1 = f.batch(index_jobs, start_url=FLOORPLAN_INDEX_PAGES[1], read_map=True)
+            beans = round1.pop("__map__", None)
         save_raw("beans_map.html", beans)
         if not beans:
             if any(MAINTENANCE_MARKER in v for v in round1.values()):
