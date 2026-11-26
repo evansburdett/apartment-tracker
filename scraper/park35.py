@@ -152,10 +152,10 @@ class Fetcher:
           headers: j.xhr ? {'X-Requested-With': 'XMLHttpRequest'} : {}});
         out[j.url] = {s: r.status, t: await r.text()};
       } catch (e) { out[j.url] = {s: 0, t: String(e)}; }
-      await new Promise(res => setTimeout(res, 400));
+      await new Promise(res => setTimeout(res, spec.gap_ms || 400));
     }
   }
-  await Promise.all([worker(), worker()]);
+  await Promise.all(Array.from({length: spec.workers || 2}, worker));
   const enc = btoa(unescape(encodeURIComponent(JSON.stringify(out))));
   const box = document.createElement('div'); box.id = 'claude-out'; box.textContent = enc;
   document.body.appendChild(box);
@@ -267,7 +267,7 @@ def parse_beans_map(html: str) -> list[dict]:
             avail = re.search(r"(Available\s+(?:Now|[A-Z][a-z]{2} \d{2}, \d{4}))", text)
             total = re.search(r"Total Monthly Leasing Price\s*\$?([\d,]+\.\d{2})", text)
             idx = next((i for i, l in enumerate(lines) if UNIT_RE.search(l)), 0)
-            plan = lines[idx + 1] if idx + 1 < len(lines) else None
+            plan = next((l for l in lines[idx + 1:] if not UNIT_RE.search(l) and not re.match(r"(?i)unit number|\d+\s*bed", l)), None)
             units[us.group(1)] = {
                 "unit": unit,
                 "unit_space_id": us.group(1),
@@ -292,34 +292,33 @@ def parse_floorplan_links(html: str) -> dict[str, str]:
 
 
 def parse_floorplan_tags(html: str) -> dict[str, list[str]]:
-    """Floor plan pages list available units with an amenities/features cell.
-    Returns {unit_number: [tags]}. Finds the smallest container that holds
-    exactly one unit number and collects known tag phrases inside it."""
+    """Floor plan pages have a unit list table with an 'Amenities' column,
+    e.g. 'Special features included with this unit. Golf Course View 7 Balcony'.
+    Returns {unit_number: [tags]}; an empty list means the unit has no listed features."""
     soup = BeautifulSoup(html, "html.parser")
     result: dict[str, list[str]] = {}
-    for node in soup.find_all(string=TAG_UNIT_RE):
-        el = node.parent
-        unit = TAG_UNIT_RE.search(str(node)).group(1)
-        best = None
-        for _ in range(8):
-            if el is None:
-                break
-            t = el.get_text(" ", strip=True)
-            if len(set(m.group(1) for m in TAG_UNIT_RE.finditer(t))) > 1:
-                break
-            best = t
-            el = el.parent
-        if not best:
+    for table in soup.find_all("table"):
+        headers = [th.get_text(" ", strip=True).lower() for th in table.find_all("th")]
+        if "unit" not in headers or "amenities" not in headers:
             continue
-        tags = []
-        for tm in TAG_VOCAB.finditer(best):
-            tag = re.sub(r"\s+", " ", tm.group(1)).strip()
-            if tag.lower() == "balcony" and re.search(r"juliet\s+balcony", best, re.I) and not re.search(r"(?<!juliet )\bbalcony\b", best.replace("Juliet Balcony", "").replace("juliet balcony", ""), re.I):
+        iu, ia = headers.index("unit"), headers.index("amenities")
+        for tr in table.select("tbody tr"):
+            cells = tr.find_all("td", recursive=False)
+            if len(cells) <= max(iu, ia):
                 continue
-            if tag not in tags:
-                tags.append(tag)
-        if tags or unit not in result:
-            result[unit] = sorted(set(result.get(unit, []) + tags))
+            unit = cells[iu].get_text(" ", strip=True).split()[0] if cells[iu].get_text(strip=True) else None
+            if not unit:
+                continue
+            text = cells[ia].get_text(" ", strip=True).replace("Special features included with this unit.", "")
+            tags = []
+            for tm in TAG_VOCAB.finditer(text):
+                tag = re.sub(r"\s+", " ", tm.group(1)).strip()
+                if tag not in tags:
+                    tags.append(tag)
+            # "Balcony" matched inside "Juliet Balcony" is not a real balcony
+            if "Balcony" in tags and not re.search(r"(?<!Juliet )\bBalcony\b", text, re.I):
+                tags.remove("Balcony")
+            result[unit] = tags
     return result
 
 
@@ -337,9 +336,9 @@ def classify(tags: list[str]) -> tuple[str, str]:
     elif "balcony" in low:
         porch = "Balcony"
     else:
-        porch = "Unknown" if not tags else "None"
-    if view == "Unknown" and tags:
-        view = "Street/exterior (untagged)" if porch in ("Balcony", "Patio") and not any("pool" in t or "wall" in t for t in low) else "Unknown"
+        porch = "None listed"
+    if view == "Unknown":
+        view = "No view listed"
     return view, porch
 
 
@@ -427,13 +426,8 @@ def main() -> int:
             else:
                 snapshot["errors"].append(f"no floor plan URL for fp {fp_id}")
         move_ins = [(today + dt.timedelta(days=o)).isoformat() for o in MOVE_IN_OFFSETS_DAYS]
-        calc_jobs = [{"url": calc_url(u, d), "xhr": True} for u in units if u["beds"] == 2 for d in move_ins]
-        if snapshot["mode"] == "direct":
-            round2 = get_many(fp_jobs + calc_jobs)
-        else:
-            calc_units = [[u["unit_space_id"], u["floorplan_id"]] for u in units if u["beds"] == 2]
-            round2 = f.batch({"urls": [j["url"] for j in fp_jobs], "calc_units": calc_units, "dates": move_ins},
-                             start_url=FLOORPLAN_INDEX_PAGES[1])
+        round2 = get_many(fp_jobs) if snapshot["mode"] == "direct" else f.batch(
+            {"urls": [j["url"] for j in fp_jobs], "workers": 2, "gap_ms": 600}, start_url=FLOORPLAN_INDEX_PAGES[1])
 
         tags_by_unit: dict[str, list[str]] = {}
         for j in fp_jobs:
@@ -449,14 +443,25 @@ def main() -> int:
             tags = tags_by_unit.get(u["unit"], [])
             u["tags"] = tags
             u["view"], u["porch"] = classify(tags)
-            u["top_floor"] = u["floor"] == 5
-            ruled_out = u["view"] in ("Pool", "Garage/Wall") or u["porch"] in ("Juliet", "None")
-            u["meets_criteria"] = (None if (u["view"] == "Unknown" or u["porch"] == "Unknown")
-                                   else (not ruled_out and u["porch"] in ("Balcony", "Patio")))
+            tagged = u["unit"] in tags_by_unit
+            ruled_out = u["view"] in ("Pool", "Garage/Wall") or u["porch"] in ("Juliet", "None listed")
+            u["meets_criteria"] = (False if (tagged and ruled_out) else
+                                   None if not tagged else u["porch"] in ("Balcony", "Patio"))
+            u["top_floor"] = u["floor"] == 5 or any(t.lower() == "top floor" for t in tags)
             u["movein_prices"] = []
-            if u["beds"] == 2:
+        # Round 3: rent calculator, one request at a time, only for 2BRs that aren't ruled out.
+        calc_targets = [u for u in units if u["beds"] == 2 and u["meets_criteria"] is not False]
+        if snapshot["mode"] == "direct":
+            round3 = get_many([{"url": calc_url(u, d), "xhr": True} for u in calc_targets for d in move_ins])
+        elif calc_targets:
+            round3 = f.batch({"calc_units": [[u["unit_space_id"], u["floorplan_id"]] for u in calc_targets],
+                              "dates": move_ins, "workers": 1, "gap_ms": 1500}, start_url=FLOORPLAN_INDEX_PAGES[1])
+        else:
+            round3 = {}
+        for u in units:
+            if u in calc_targets:
                 for d in move_ins:
-                    h = round2.get(calc_url(u, d))
+                    h = round3.get(calc_url(u, d))
                     if d == move_ins[0]:
                         save_raw(f"calc_{u['unit']}.html", h)
                     if not h:
@@ -467,7 +472,7 @@ def main() -> int:
             u["base_rent"] = u["movein_prices"][0]["base_rent"] if u["movein_prices"] else None
             snapshot["units"].append(u)
         n_calc = sum(len(u["movein_prices"]) for u in snapshot["units"])
-        if calc_jobs and n_calc == 0:
+        if calc_targets and n_calc == 0:
             snapshot["errors"].append("all rent-calculator requests failed")
     except SiteDown as e:
         snapshot["status"] = "site_down"
