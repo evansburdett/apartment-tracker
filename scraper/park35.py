@@ -142,11 +142,15 @@ class Fetcher:
 """
 
     def batch(self, jobs: list[dict], start_url: str = BASE + "/") -> dict[str, str]:
+        got, _ = self.batch_with_page(jobs, start_url)
+        return got
+
+    def batch_with_page(self, jobs: list[dict], start_url: str = BASE + "/") -> tuple[dict[str, str], str | None]:
         """Open start_url in ScrapingBee's browser (clears Cloudflare), then fetch
         every job URL from inside the page with the site's own cookies.
         jobs: [{"url": ..., "xhr": bool}]. Returns {url: body} for 200 responses."""
-        if not self.sb_key or not jobs:
-            return {}
+        if not self.sb_key:
+            return {}, None
         import base64
         js = self.BATCH_JS.replace("%JOBS%", base64.b64encode(json.dumps(jobs).encode()).decode())
         scenario = {"instructions": [{"evaluate": js}, {"wait_for": "#claude-done"}]}
@@ -164,14 +168,15 @@ class Fetcher:
                     bad = {u: v.get("s") for u, v in raw.items() if u not in got}
                     if bad:
                         print(f"batch: {len(bad)} job(s) failed, statuses {sorted(set(bad.values()))}", file=sys.stderr)
-                    return got
+                    page = r.text[:m.start()] if not self._blocked(200, r.text) else None
+                    return got, page
                 print(f"batch attempt {attempt + 1}: status {r.status_code}, marker={'yes' if m else 'no'}: "
                       f"{r.text[:300]!r}", file=sys.stderr)
                 save_raw(f"batch_fail_{attempt + 1}.html", r.text)
             except Exception as e:
                 print(f"batch error {e!r}", file=sys.stderr)
         self.stats["proxy_fail"] += 1
-        return {}
+        return {}, None
 
 
 class SiteDown(RuntimeError):
@@ -365,8 +370,12 @@ def main() -> int:
         snapshot["mode"] = "direct" if probe else "browser_batch"
         print(f"mode: {snapshot['mode']}", file=sys.stderr)
 
-        round1 = get_many([{"url": u} for u in FLOORPLAN_INDEX_PAGES] + ([] if probe else [{"url": BEANS_MAP}]))
-        beans = probe or round1.get(BEANS_MAP)
+        index_jobs = [{"url": u} for u in FLOORPLAN_INDEX_PAGES]
+        if probe:
+            round1, beans = get_many(index_jobs), probe
+        else:
+            # The map endpoint 403s when fetched from inside a page, so load it as the start page.
+            round1, beans = f.batch_with_page(index_jobs, start_url=BEANS_MAP)
         save_raw("beans_map.html", beans)
         if not beans:
             if any(MAINTENANCE_MARKER in v for v in round1.values()):
