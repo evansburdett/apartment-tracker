@@ -8,20 +8,20 @@
    "unit": "147",
    "unit_space_id": "4862554",
    "floorplan_id": "1040036",
-   "floorplan": "1-147",
+   "floorplan": "Southside L",
    "beds": 2,
    "sqft": 1218,
    "floor": 1,
    "available": "Now",
    "total_monthly_13mo": 2387.65,
    "tags": [
-    "Balcony",
-    "Golf Course View 7"
+    "Golf Course View 7",
+    "Balcony"
    ],
    "view": "Golf course",
    "porch": "Balcony",
-   "top_floor": false,
    "meets_criteria": true,
+   "top_floor": false,
    "movein_prices": [
     {
      "move_in": "2026-12-03",
@@ -48,17 +48,17 @@
    "unit": "G19",
    "unit_space_id": "4862780",
    "floorplan_id": "1040029",
-   "floorplan": "1-G19",
+   "floorplan": "Hollywood C",
    "beds": 2,
    "sqft": 1028,
    "floor": 0,
    "available": "Now",
    "total_monthly_13mo": 1920.65,
    "tags": [],
-   "view": "Unknown",
-   "porch": "Unknown",
+   "view": "No view listed",
+   "porch": "None listed",
+   "meets_criteria": false,
    "top_floor": false,
-   "meets_criteria": null,
    "movein_prices": [],
    "base_rent": null
   },
@@ -66,7 +66,7 @@
    "unit": "305",
    "unit_space_id": "4862624",
    "floorplan_id": "1040021",
-   "floorplan": "1-305",
+   "floorplan": "ForestPark H",
    "beds": 2,
    "sqft": 1082,
    "floor": 3,
@@ -75,10 +75,10 @@
    "tags": [
     "Juliet Balcony"
    ],
-   "view": "Unknown",
+   "view": "No view listed",
    "porch": "Juliet",
+   "meets_criteria": false,
    "top_floor": false,
-   "meets_criteria": null,
    "movein_prices": [],
    "base_rent": null
   },
@@ -86,20 +86,20 @@
    "unit": "106",
    "unit_space_id": "4862523",
    "floorplan_id": "1040022",
-   "floorplan": "1-106",
+   "floorplan": "Ensley C",
    "beds": 3,
    "sqft": 1432,
    "floor": 1,
    "available": "Now",
    "total_monthly_13mo": 2512.65,
    "tags": [
-    "Balcony",
-    "Pool view"
+    "Pool view",
+    "Balcony"
    ],
    "view": "Pool",
    "porch": "Balcony",
-   "top_floor": false,
    "meets_criteria": false,
+   "top_floor": false,
    "movein_prices": [],
    "base_rent": null
   },
@@ -107,20 +107,20 @@
    "unit": "202",
    "unit_space_id": "4862571",
    "floorplan_id": "1040019",
-   "floorplan": "1-202",
+   "floorplan": "Westside I",
    "beds": 2,
    "sqft": 1106,
    "floor": 2,
    "available": "Now",
    "total_monthly_13mo": 2058.65,
    "tags": [
-    "Balcony",
-    "Pool view"
+    "Pool view",
+    "Balcony"
    ],
    "view": "Pool",
    "porch": "Balcony",
-   "top_floor": false,
    "meets_criteria": false,
+   "top_floor": false,
    "movein_prices": [],
    "base_rent": null
   },
@@ -128,17 +128,17 @@
    "unit": "G25",
    "unit_space_id": "4862783",
    "floorplan_id": "1040053",
-   "floorplan": "1-G25",
+   "floorplan": "Crestline L",
    "beds": 1,
    "sqft": 920,
    "floor": 0,
    "available": "Now",
    "total_monthly_13mo": 1783.65,
    "tags": [],
-   "view": "Unknown",
-   "porch": "Unknown",
+   "view": "No view listed",
+   "porch": "None listed",
+   "meets_criteria": false,
    "top_floor": false,
-   "meets_criteria": null,
    "movein_prices": [],
    "base_rent": null
   },
@@ -146,21 +146,21 @@
    "unit": "422",
    "unit_space_id": "4862703",
    "floorplan_id": "1040026",
-   "floorplan": "1-422",
+   "floorplan": "Hollywood B",
    "beds": 2,
    "sqft": 1023,
    "floor": 4,
    "available": "Now",
    "total_monthly_13mo": 2145.65,
    "tags": [
-    "Balcony",
     "Pool view",
-    "Top Floor"
+    "Top Floor",
+    "Balcony"
    ],
    "view": "Pool",
    "porch": "Balcony",
-   "top_floor": false,
    "meets_criteria": false,
+   "top_floor": true,
    "movein_prices": [],
    "base_rent": null
   },
@@ -168,7 +168,7 @@
    "unit": "419",
    "unit_space_id": "4862700",
    "floorplan_id": "1040029",
-   "floorplan": "1-419",
+   "floorplan": "Hollywood C",
    "beds": 2,
    "sqft": 1028,
    "floor": 4,
@@ -176,13 +176,13 @@
    "total_monthly_13mo": 2199.65,
    "tags": [
     "Golf Course View 6",
-    "Juliet Balcony",
-    "Top Floor"
+    "Top Floor",
+    "Juliet Balcony"
    ],
    "view": "Golf course",
    "porch": "Juliet",
-   "top_floor": false,
    "meets_criteria": false,
+   "top_floor": true,
    "movein_prices": [],
    "base_rent": null
   },
@@ -190,20 +190,20 @@
    "unit": "314",
    "unit_space_id": "4862633",
    "floorplan_id": "1040026",
-   "floorplan": "1-314",
+   "floorplan": "Hollywood B",
    "beds": 2,
    "sqft": 1023,
    "floor": 3,
    "available": "Now",
    "total_monthly_13mo": 2198.65,
    "tags": [
-    "Balcony",
-    "Pool view"
+    "Pool view",
+    "Balcony"
    ],
    "view": "Pool",
    "porch": "Balcony",
-   "top_floor": false,
    "meets_criteria": false,
+   "top_floor": false,
    "movein_prices": [],
    "base_rent": null
   },
@@ -211,20 +211,20 @@
    "unit": "552",
    "unit_space_id": "4862751",
    "floorplan_id": "1040023",
-   "floorplan": "1-552",
+   "floorplan": "Magnolia F",
    "beds": 1,
    "sqft": 706,
    "floor": 5,
    "available": "Dec 04, 2026",
    "total_monthly_13mo": 1619.65,
    "tags": [
-    "Juliet Balcony",
-    "Top Floor"
+    "Top Floor",
+    "Juliet Balcony"
    ],
-   "view": "Unknown",
+   "view": "No view listed",
    "porch": "Juliet",
+   "meets_criteria": false,
    "top_floor": true,
-   "meets_criteria": null,
    "movein_prices": [],
    "base_rent": null
   },
@@ -232,7 +232,7 @@
    "unit": "559",
    "unit_space_id": "4862758",
    "floorplan_id": "1040037",
-   "floorplan": "1-559",
+   "floorplan": "Avondale C",
    "beds": 1,
    "sqft": 673,
    "floor": 5,
@@ -240,13 +240,13 @@
    "total_monthly_13mo": 1644.65,
    "tags": [
     "Golf Course View 8",
-    "Juliet Balcony",
-    "Top Floor"
+    "Top Floor",
+    "Juliet Balcony"
    ],
    "view": "Golf course",
    "porch": "Juliet",
-   "top_floor": true,
    "meets_criteria": false,
+   "top_floor": true,
    "movein_prices": [],
    "base_rent": null
   },
@@ -254,17 +254,17 @@
    "unit": "173",
    "unit_space_id": "4862563",
    "floorplan_id": "1040040",
-   "floorplan": "1-173",
+   "floorplan": "Lakeview A",
    "beds": 1,
    "sqft": 965,
    "floor": 1,
    "available": "Dec 11, 2026",
    "total_monthly_13mo": 1934.65,
    "tags": [],
-   "view": "Unknown",
-   "porch": "Unknown",
+   "view": "No view listed",
+   "porch": "None listed",
+   "meets_criteria": false,
    "top_floor": false,
-   "meets_criteria": null,
    "movein_prices": [],
    "base_rent": null
   },
@@ -272,7 +272,7 @@
    "unit": "460",
    "unit_space_id": "4862733",
    "floorplan_id": "1040023",
-   "floorplan": "1-460",
+   "floorplan": "Magnolia F",
    "beds": 1,
    "sqft": 706,
    "floor": 4,
@@ -281,10 +281,10 @@
    "tags": [
     "Juliet Balcony"
    ],
-   "view": "Unknown",
+   "view": "No view listed",
    "porch": "Juliet",
+   "meets_criteria": false,
    "top_floor": false,
-   "meets_criteria": null,
    "movein_prices": [],
    "base_rent": null
   }
@@ -293,7 +293,7 @@
  "fetch_stats": {
   "direct_ok": 0,
   "direct_blocked": 0,
-  "proxy_ok": 2,
+  "proxy_ok": 3,
   "proxy_fail": 0
  }
 }
