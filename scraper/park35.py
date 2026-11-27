@@ -467,7 +467,7 @@ def main() -> int:
                     if not h:
                         continue
                     c = parse_calculator(h)
-                    if c["base_rent"] or c["total_by_term"]:
+                    if c["base_rent"] and c["total_by_term"]:  # partial loads misreport base rent
                         u["movein_prices"].append({"move_in": d, **c})
             u["base_rent"] = u["movein_prices"][0]["base_rent"] if u["movein_prices"] else None
             snapshot["units"].append(u)
