@@ -2,18 +2,18 @@ name: Daily Park 35 scrape
 
 on:
   schedule:
-    - cron: "17 12 * * *"   # 6:17 AM Central (standard time)
+    - cron: "43 9 * * *"    # backup only: 3:43 AM Central; GitHub often runs schedules hours late
   workflow_dispatch: {}
   push:
     branches: [main]
-    paths: ["scraper/**", ".github/workflows/**", "requirements.txt"]
+    paths: ["scraper/**", ".github/workflows/**", "requirements.txt", "trigger/**"]
 
 permissions:
   contents: write
 
 concurrency:
   group: scrape
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   scrape:
@@ -25,7 +25,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
+      - name: Skip if today's snapshot already exists (backup schedule only)
+        id: guard
+        run: |
+          today=$(TZ=America/Chicago date +%F)
+          if [ "${{ github.event_name }}" = "schedule" ] && python -c "import json,sys;d=json.load(open('data/latest.json'));sys.exit(0 if d.get('date')=='$today' and d.get('status')=='ok' else 1)" 2>/dev/null; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"; echo "Already scraped today; skipping."
+          fi
       - name: Scrape Park 35
+        if: steps.guard.outputs.skip != 'true'
         env:
           SCRAPINGBEE_API_KEY: ${{ secrets.SCRAPINGBEE_API_KEY }}
         run: python scraper/park35.py
