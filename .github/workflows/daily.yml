@@ -2,7 +2,14 @@ name: Daily Park 35 scrape
 
 on:
   schedule:
-    - cron: "43 9 * * *"    # backup only: 3:43 AM Central; GitHub often runs schedules hours late
+    # GitHub often starts schedules late or skips them, so ask several times;
+    # every run after the first successful one that day exits immediately.
+    - cron: "43 9 * * *"    # 3:43 AM Central
+    - cron: "7 10 * * *"    # 4:07 AM
+    - cron: "23 11 * * *"   # 5:23 AM
+    - cron: "41 12 * * *"   # 6:41 AM
+    - cron: "19 14 * * *"   # 8:19 AM
+    - cron: "37 17 * * *"   # 11:37 AM
   workflow_dispatch: {}
   push:
     branches: [main]
