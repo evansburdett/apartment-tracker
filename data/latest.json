@@ -1,5 +1,5 @@
 {
- "date": "2026-11-26",
+ "date": "2026-11-27",
  "property": "Park 35",
  "status": "ok",
  "mode": "browser_batch",
@@ -24,7 +24,7 @@
    "top_floor": false,
    "movein_prices": [
     {
-     "move_in": "2026-12-03",
+     "move_in": "2026-12-04",
      "base_rent": 2313.0,
      "total_by_term": {
       "13": 2387.65,
@@ -37,9 +37,17 @@
      }
     },
     {
-     "move_in": "2026-12-10",
-     "base_rent": 2387.0,
-     "total_by_term": {}
+     "move_in": "2026-12-11",
+     "base_rent": 2313.0,
+     "total_by_term": {
+      "13": 2387.65,
+      "12": 2387.65,
+      "11": 2387.65,
+      "10": 2387.65,
+      "9": 2387.65,
+      "6": 2637.65,
+      "4": 2637.65
+     }
     }
    ],
    "base_rent": 2313.0
@@ -165,6 +173,26 @@
    "base_rent": null
   },
   {
+   "unit": "460",
+   "unit_space_id": "4862733",
+   "floorplan_id": "1040023",
+   "floorplan": "Magnolia F",
+   "beds": 1,
+   "sqft": 706,
+   "floor": 4,
+   "available": "Now",
+   "total_monthly_13mo": 1574.65,
+   "tags": [
+    "Juliet Balcony"
+   ],
+   "view": "No view listed",
+   "porch": "Juliet",
+   "meets_criteria": false,
+   "top_floor": false,
+   "movein_prices": [],
+   "base_rent": null
+  },
+  {
    "unit": "419",
    "unit_space_id": "4862700",
    "floorplan_id": "1040029",
@@ -208,6 +236,28 @@
    "base_rent": null
   },
   {
+   "unit": "559",
+   "unit_space_id": "4862758",
+   "floorplan_id": "1040037",
+   "floorplan": "Avondale C",
+   "beds": 1,
+   "sqft": 673,
+   "floor": 5,
+   "available": "Now",
+   "total_monthly_13mo": 1644.65,
+   "tags": [
+    "Golf Course View 8",
+    "Top Floor",
+    "Juliet Balcony"
+   ],
+   "view": "Golf course",
+   "porch": "Juliet",
+   "meets_criteria": false,
+   "top_floor": true,
+   "movein_prices": [],
+   "base_rent": null
+  },
+  {
    "unit": "552",
    "unit_space_id": "4862751",
    "floorplan_id": "1040023",
@@ -229,28 +279,6 @@
    "base_rent": null
   },
   {
-   "unit": "559",
-   "unit_space_id": "4862758",
-   "floorplan_id": "1040037",
-   "floorplan": "Avondale C",
-   "beds": 1,
-   "sqft": 673,
-   "floor": 5,
-   "available": "Dec 08, 2026",
-   "total_monthly_13mo": 1644.65,
-   "tags": [
-    "Golf Course View 8",
-    "Top Floor",
-    "Juliet Balcony"
-   ],
-   "view": "Golf course",
-   "porch": "Juliet",
-   "meets_criteria": false,
-   "top_floor": true,
-   "movein_prices": [],
-   "base_rent": null
-  },
-  {
    "unit": "173",
    "unit_space_id": "4862563",
    "floorplan_id": "1040040",
@@ -263,26 +291,6 @@
    "tags": [],
    "view": "No view listed",
    "porch": "None listed",
-   "meets_criteria": false,
-   "top_floor": false,
-   "movein_prices": [],
-   "base_rent": null
-  },
-  {
-   "unit": "460",
-   "unit_space_id": "4862733",
-   "floorplan_id": "1040023",
-   "floorplan": "Magnolia F",
-   "beds": 1,
-   "sqft": 706,
-   "floor": 4,
-   "available": "Dec 01, 2026",
-   "total_monthly_13mo": 1574.65,
-   "tags": [
-    "Juliet Balcony"
-   ],
-   "view": "No view listed",
-   "porch": "Juliet",
    "meets_criteria": false,
    "top_floor": false,
    "movein_prices": [],
