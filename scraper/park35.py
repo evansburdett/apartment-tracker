@@ -338,7 +338,9 @@ def classify(tags: list[str]) -> tuple[str, str]:
     else:
         porch = "None listed"
     if view == "Unknown":
-        view = "No view listed"
+        # Park 35 only tags named views (golf course, pool, wall/garage). Units with
+        # no view tag have checked out as street-facing (e.g. #305, #462).
+        view = "Street (untagged)"
     return view, porch
 
 
@@ -443,8 +445,10 @@ def main() -> int:
             tags = tags_by_unit.get(u["unit"], [])
             u["tags"] = tags
             u["view"], u["porch"] = classify(tags)
+            if u["unit"].startswith("G") and u["view"] == "Street (untagged)":
+                u["view"] = "Garage level (untagged)"
             tagged = u["unit"] in tags_by_unit
-            ruled_out = u["view"] in ("Pool", "Garage/Wall") or u["porch"] in ("Juliet", "None listed")
+            ruled_out = u["view"] in ("Pool", "Garage/Wall", "Garage level (untagged)") or u["porch"] in ("Juliet", "None listed")
             u["meets_criteria"] = (False if (tagged and ruled_out) else
                                    None if not tagged else u["porch"] in ("Balcony", "Patio"))
             u["top_floor"] = u["floor"] == 5 or any(t.lower() == "top floor" for t in tags)
