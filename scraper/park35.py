@@ -143,23 +143,14 @@ class Fetcher:
       }
       out['__map__'] = {s: html ? 200 : 0, t: html || 'map iframe not found'};
       const frame = [...document.querySelectorAll('iframe')].find(f => (f.src || '').includes('view_beans_map'));
+      const mapBase = frame ? frame.src.replace(/&move_in_date=[^&]*/g, '') : null;
       for (const d of (spec.map_dates || [])) {
-        let h2 = null;
-        if (frame) {
-          const base = frame.src.replace(/&move_in_date=[^&]*/g, '');
-          frame.src = base + '&move_in_date=' + d;
-          for (let k = 0; k < 40 && !h2; k++) {
-            await new Promise(res => setTimeout(res, 500));
-            try {
-              const fd = frame.contentDocument;
-              if (fd && fd.readyState === 'complete' && fd.location.href.includes(d)) {
-                h2 = fd.querySelector('[data-url*="unit_space"]') ? fd.documentElement.outerHTML : (k > 10 ? '<html></html>' : null);
-              }
-            } catch (e) {}
-          }
-        }
-        out['__map__' + d] = {s: h2 ? 200 : 0, t: h2 || 'map iframe not found'};
-        await new Promise(res => setTimeout(res, 1200));
+        if (!mapBase) { out['__map__' + d] = {s: 0, t: 'no map frame'}; continue; }
+        try {
+          const r = await fetch(mapBase + '&move_in_date=' + d, {credentials: 'include'});
+          out['__map__' + d] = {s: r.status, t: await r.text()};
+        } catch (e) { out['__map__' + d] = {s: 0, t: String(e)}; }
+        await new Promise(res => setTimeout(res, 1000));
       }
     } catch (e) { out['__map__'] = {s: 0, t: String(e)}; }
   }
