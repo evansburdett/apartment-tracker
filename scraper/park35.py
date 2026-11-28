@@ -240,7 +240,37 @@ UNIT_RE = re.compile(r"\b(\d)-([A-Z]?\d{2,3})\b")
 TAG_UNIT_RE = re.compile(r"(?:\b\d-|#|\bApt\.?\s*|\bUnit\s+)([A-Z]?\d{2,3})\b")
 
 
+JSON_STR_RE = re.compile(r'"((?:[^"\\]|\\.)*)"')
+
+
 def parse_beans_map(html: str) -> list[dict]:
+    """Accepts either a rendered map DOM or the raw map payload, where each unit is
+    a JSON object {"unit": "1-462", "options": {"onPreviewContent": "<html>",
+    "onCardContent": "<html with Calculate button>", ...}}."""
+    if "onPreviewContent" in html:
+        starts = [m.start() for m in re.finditer(r'"unit":"\d-[A-Z]?\d{2,3}"', html)]
+        sections = []
+        for k, st in enumerate(starts):
+            obj = html[st: starts[k + 1] if k + 1 < len(starts) else st + 60000]
+            parts = []
+            for m in JSON_STR_RE.finditer(obj):
+                raw = m.group(1)
+                if "<" not in raw and "\\u003c" not in raw:
+                    continue
+                try:
+                    parts.append(json.loads('"' + raw + '"'))
+                except ValueError:
+                    continue
+            if parts:
+                sections.append("<section>" + "".join(parts) + "</section>")
+        if sections:
+            got = _parse_cards("<div>" + "".join(sections) + "</div>")
+            if got:
+                return got
+    return _parse_cards(html)
+
+
+def _parse_cards(html: str) -> list[dict]:
     """Each available unit card has a Calculate button whose data-url carries
     unit_space[id] and property_floorplan[id]; the card text carries unit,
     plan, beds, baths, sqft, floor, availability and total monthly price."""
@@ -278,7 +308,7 @@ def parse_beans_map(html: str) -> list[dict]:
             avail = re.search(r"(Available\s+(?:Now|[A-Z][a-z]{2} \d{2}, \d{4}))", text)
             total = re.search(r"Total Monthly Leasing Price\s*\$?([\d,]+\.\d{2})", text)
             idx = next((i for i, l in enumerate(lines) if UNIT_RE.search(l)), 0)
-            plan = next((l for l in lines[idx + 1:] if not UNIT_RE.search(l) and not re.match(r"(?i)unit number|\d+\s*bed", l)), None)
+            plan = next((l for l in lines[idx + 1:] if not UNIT_RE.search(l) and not re.match(r"(?i)unit number|\d+\s*bed|floor\s*\d|available", l)), None)
             units[us.group(1)] = {
                 "unit": unit,
                 "unit_space_id": us.group(1),
