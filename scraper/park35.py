@@ -249,6 +249,7 @@ def parse_beans_map(html: str) -> list[dict]:
     "onCardContent": "<html with Calculate button>", ...}}."""
     if "onPreviewContent" in html:
         starts = [m.start() for m in re.finditer(r'"unit":"\d-[A-Z]?\d{2,3}"', html)]
+        card_tags: dict[str, list[str]] = {}
         sections = []
         for k, st in enumerate(starts):
             obj = html[st: starts[k + 1] if k + 1 < len(starts) else st + 60000]
@@ -263,8 +264,15 @@ def parse_beans_map(html: str) -> list[dict]:
                     continue
             if parts:
                 sections.append("<section>" + "".join(parts) + "</section>")
+                um = re.match(r'"unit":"\d-([A-Z]?\d{2,3})"', obj)
+                txt = BeautifulSoup("".join(parts), "html.parser").get_text(" | ", strip=True)
+                am = re.search(r"Amenities \| (.*?)(?: \| Apply Now|$)", txt)
+                card_tags[um.group(1)] = [t.strip() for t in am.group(1).split(" | ") if t.strip()] if am else []
         if sections:
             got = _parse_cards("<div>" + "".join(sections) + "</div>")
+            for u in got:
+                if u["unit"] in card_tags:
+                    u["map_tags"] = card_tags[u["unit"]]
             if got:
                 return got
     return _parse_cards(html)
@@ -484,7 +492,8 @@ def main() -> int:
             fp_links.update(parse_floorplan_links(h))
         save_raw("floorplan_links.json", json.dumps(fp_links, indent=1))
 
-        fp_ids = sorted({u["floorplan_id"] for u in units if u["floorplan_id"]})
+        # Map cards carry each unit's amenity tags; only fall back to floor plan pages for units without them.
+        fp_ids = sorted({u["floorplan_id"] for u in units if u["floorplan_id"] and "map_tags" not in u})
         fp_jobs = []
         for fp_id in fp_ids:
             if fp_id not in fp_links:
@@ -498,7 +507,7 @@ def main() -> int:
             else:
                 snapshot["errors"].append(f"no floor plan URL for fp {fp_id}")
         move_ins = [(today + dt.timedelta(days=o)).isoformat() for o in MOVE_IN_OFFSETS_DAYS]
-        round2 = get_many(fp_jobs) if snapshot["mode"] == "direct" else f.batch(
+        round2 = {} if not fp_jobs else get_many(fp_jobs) if snapshot["mode"] == "direct" else f.batch(
             {"urls": [j["url"] for j in fp_jobs], "workers": 2, "gap_ms": 600}, start_url=FLOORPLAN_INDEX_PAGES[1])
 
         tags_by_unit: dict[str, list[str]] = {}
@@ -512,12 +521,16 @@ def main() -> int:
                 snapshot["errors"].append(f"floor plan page failed: {j['url']}")
 
         for u in units:
-            tags = tags_by_unit.get(u["unit"], [])
+            if u["unit"] in tags_by_unit:
+                tags = tags_by_unit[u["unit"]]
+            else:
+                tags = u.get("map_tags", [])
             u["tags"] = tags
             u["view"], u["porch"] = classify(tags)
             if u["unit"].startswith("G") and u["view"] == "Street (untagged)":
                 u["view"] = "Garage level (untagged)"
-            tagged = u["unit"] in tags_by_unit
+            tagged = u["unit"] in tags_by_unit or "map_tags" in u
+            u.pop("map_tags", None)
             ruled_out = u["view"] in ("Pool", "Garage/Wall", "Garage level (untagged)") or u["porch"] in ("Juliet", "None listed")
             u["meets_criteria"] = (False if (tagged and ruled_out) else
                                    None if not tagged else u["porch"] in ("Balcony", "Patio"))
@@ -530,8 +543,11 @@ def main() -> int:
         if snapshot["mode"] == "direct":
             round3 = get_many([{"url": calc_url(u, d), "xhr": True} for u in calc_targets for d in u["_move_ins"]])
         elif calc_targets:
-            round3 = f.batch({"calc_units": [[u["unit_space_id"], u["floorplan_id"], u["_move_ins"]] for u in calc_targets],
-                              "workers": 1, "gap_ms": 1500}, start_url=FLOORPLAN_INDEX_PAGES[1])
+            round3 = {}
+            for k in range(0, len(calc_targets), 3):  # keep each browser session well under ScrapingBee's time limit
+                chunk = calc_targets[k:k + 3]
+                round3.update(f.batch({"calc_units": [[u["unit_space_id"], u["floorplan_id"], u["_move_ins"]] for u in chunk],
+                                       "workers": 1, "gap_ms": 1200}, start_url=FLOORPLAN_INDEX_PAGES[1]))
         else:
             round3 = {}
         for u in units:
