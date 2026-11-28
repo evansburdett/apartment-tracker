@@ -1,0 +1,316 @@
+
+<style>
+    body {
+        overflow: hidden;
+    }
+    .property-map {
+       position: absolute !important;
+       top: 0;
+       left: 0;
+    }
+    
+</style>
+
+<link rel='stylesheet' href='https://js.arcgis.com/4.27/esri/themes/light/main.css'>
+<link rel='stylesheet' href='https://commoncf.entrata.com/css/?template=anchor/&template-theme=theme1&template-colors-new=YToxNzp7czoxMDoiYmFzZS1jb2xvciI7czo3OiIjRTZFNkU2IjtzOjEwOiJ0ZXh0LWNvbG9yIjtzOjc6IiNFNkU2RTYiO3M6MTQ6ImFjY2VudC1jb2xvci0xIjtzOjc6IiNFNkU2RTYiO3M6MTQ6ImFjY2VudC1jb2xvci0yIjtzOjc6IiNFNkU2RTYiO3M6MTQ6ImFjY2VudC1jb2xvci0zIjtzOjc6IiNFNkU2RTYiO3M6MTQ6ImFjY2VudC1jb2xvci00IjtzOjc6IiNFNkU2RTYiO3M6MTM6InByaW1hcnktY29sb3IiO3M6ODoiIyNjOWE3NDUiO3M6MTU6InNlY29uZGFyeS1jb2xvciI7czo3OiIjRjRGNEVGIjtzOjE0OiJ0ZXJ0aWFyeS1jb2xvciI7czo3OiIjRTZFNkU2IjtzOjE2OiJiYWNrZ3JvdW5kLWNvbG9yIjtzOjc6IiNGRkZGRkYiO3M6MjA6InByaW1hcnktYnV0dG9uLWNvbG9yIjtzOjc6IiM0YTRhNGEiO3M6MTc6ImFjY2VudC1jb2xvci1maXZlIjtzOjc6IiNFNkU2RTYiO3M6MTk6InByaW1hcnktdGl0bGUtY29sb3IiO3M6NzoiI2EzODE2YSI7czoyMToic2Vjb25kYXJ5LXRpdGxlLWNvbG9yIjtzOjc6IiNiM2EwODEiO3M6MTU6Im92ZXJsYXktY29sb3ItMSI7czo3OiIjMjMxZjIwIjtzOjE1OiJvdmVybGF5LWNvbG9yLTIiO3M6NzoiIzIzMWYyMCI7czoyNjoic2l0ZS1wbGFuLWFjdGl2ZS1waW4tY29sb3IiO3M6NzoiI0U2RTZFNiI7fQ==&headline-1-font=Roboto+Slab%2Csans-serif&headline-1-font-weight=300&headline-1-font-style=normal&headline-2-font=Ms+Madi%2Csans-serif&headline-2-font-weight=400&headline-2-font-style=normal&body-font=Lato%2Csans-serif&body-font-weight=400&body-font-style=normal&template-shapes=YTozOntzOjEyOiJidXR0b24tc2hhcGUiO3M6ODoiYnRuLXNvZnQiO3M6MTY6ImJ1dHRvbi10ZXh0LWNhc2UiO3M6MTg6ImJ0bi10ZXh0LXVwcGVyY2FzZSI7czoxNToiY29udGFpbmVyLXNoYXBlIjtzOjE2OiJjb250YWluZXItc3F1YXJlIjt9&slider-opacity=0.4&bg-pattern-opacity=10&property-search-new-layout=1&page-type=full_width&application-type=beans_interactive_map&use-custom-less-vars=0&lkey=b1461a22da7d85b1b0cd5427010492a3&lver=3588599'>
+<link rel='stylesheet' href='https://www.beans.ai/mapswidget/css/mapswidget-1.0.5.css'>
+<style>
+    :root {
+        /* CSS Variables for brand colors */
+                    --ui-button-bg-color: #24453E;
+        
+                    --ui-button-text-color: #fff;
+        
+                    --ui-button-active-bg-color: #A6671D;
+        
+                    --ui-button-active-text-color: #fff;
+        
+                    --floor-nav-bg-color: #f5f5f5;
+        
+                    --floor-nav-text-color: #484848;
+        
+                    --floor-nav-selected-bg-color: #24453E;
+        
+                    --floor-nav-selected-text-color: #fff;
+        
+                    --unit-listing-bg-color: #24453E;
+        
+                    --unit-listing-text-color: #fff;
+        
+        
+        
+        
+        
+        
+        
+                    --primary-brand-color: #24453E;
+        
+        
+            }
+
+    /* Apply CSS variables to elements */
+            .beans-map-button-container {
+            background-color: var(--ui-button-bg-color) !important;
+        }
+    
+            .beans-map-button-container {
+            color: var(--ui-button-text-color) !important;
+        }
+    
+            .beans-map-button-container.active {
+            background-color: var(--ui-button-active-bg-color) !important;
+        }
+    
+            .beans-map-button-text {
+            color: var(--ui-button-active-text-color) !important;
+        }
+    
+            .property-map .floor-card .floor-picker {
+            background-color: var(--floor-nav-bg-color) !important;
+        }
+    
+            .property-map .floor-card .floor-picker {
+            color: var(--floor-nav-text-color) !important;
+        }
+    
+            .property-map .floor-card .floor-picker .floor-picker-active {
+            background-color: var(--floor-nav-selected-bg-color) !important;
+        }
+    
+            .property-map .floor-card .floor-picker .floor-picker-active {
+            color: var(--floor-nav-selected-text-color) !important;
+        }
+    
+            .unitlist-element-container.selected {
+            background-color: var(--unit-listing-bg-color) !important;
+        }
+    
+            .unitlist-element-container.selected {
+            color: var(--unit-listing-text-color) !important;
+        }
+    
+    
+    
+    
+    
+    
+    
+    .beans-buttonbar .list-poi{
+        color:#000000;
+    }
+</style>
+<script src='https://www.beans.ai/mapswidget/js/banvas.js'></script>
+<script src='https://js.arcgis.com/4.27/'></script>
+<script src='https://commoncf.entrata.com/website_templates/_assets/prospect_portal/module/beans_interactive_map_iframe.min.js?ver=1795786351'></script>
+<script src='https://www.beans.ai/mapswidget/js/mapswidget-1.0.4.js'></script>
+
+<script type="text/javascript">
+
+    const elementId3D = 'beans-maps-1d3';
+    const elementId2D = 'beans-maps-1d2';
+
+     function show3DMap() {
+        document.getElementById(elementId2D).style.display = "none";
+        document.getElementById(elementId3D).style.display = "block";
+        document.getElementById(elementId3D).style.visibility = 'unset';
+    }
+
+    function show2DMap() {
+        document.getElementById(elementId3D).style.display = "none";
+        document.getElementById(elementId2D).style.display = "block";
+        document.getElementById(elementId2D).style.visibility = 'unset';
+    }
+
+</script>
+
+                    <style>
+    .property-map.d2 {
+        width: 100% !important;
+        height: 600px !important;
+    }
+</style>
+
+<div id="beans-maps-1d2"
+    class="property-map d2">
+</div>
+
+<script type="text/javascript">
+    var be = new BeansMap();
+    be.render(
+        "beans-maps-1d2",
+        "485a3872c67345c:6666663931663765636562663463393339353036",
+        [],
+        {"hideMyLocationButton":true}, // Nav Options
+        {
+            'show2DButton': '',
+            'show3DButton': '1',
+            'event3D': show3DMap,
+            'event2D': show2DMap,
+            'beansMapType': 'BANVAS',
+            'showUnitList': '1',
+            'propertyAddress': '3500 Clairmont Ave, Birmingham, AL, , 35222, US',
+            'showNumbers': '1',
+            'hideSatelliteButton': '1',
+            'hideRotateControl': '1',
+            'hideBeansCard': '',
+            'hideFilters': '1',
+            'hideFloorSelector': '',
+            'hideShadow': '',
+            'modernBeansCard': true,
+            'modernButtons': true,
+            'showPOIButton': '',
+            'showImmersive': '',
+            'showImmersiveExterior': '',
+            'outsideButtons': '1',
+            'noUnitsContent': "<div class=\"beans-filters-no-units-available-container\">\n\t<div class=\"no-units-available-icon-wrapper\">\n\t\t<svg class=\"pp-svg-icon no-units-available-icon\" aria-hidden=\"true\">\n\t\t\t<use xlink:href=\"\/Common\/website_templates\/_common\/fonts\/svg_sprite.svg#no-units-list-icon\"><\/use>\n\t\t<\/svg>\n\t<\/div>\n\t<h3 class=\"no-units-available-title\">No Units Currently<br>Available<\/h3>\n\t<\/div>\n",
+            'showUnitShape': '1',
+            'skipFirstSelect': '1',
+            'isSatelliteEnabledOnLoad': '',
+            'isNearbyEnabledOnLoad': '',
+            'showImmersiveOnLoad': '1',
+            'isShadowEnabledOnLoad': '',
+            'shadowOnLoadTs': '',
+            'selectableUnitShape': {"fillColor":"#6ed90b"},
+            'selectedUnitShape': {"fillColor":"#cc088e"},
+            'enableBurgerButton': '1',
+            'showFloorSlider': '1',
+            'showFullScreenMode': false,
+            'entrataPropertyId': 1128707
+        }, // Display Options
+        {
+            onSelect: (onClickData) => {
+                                    window.sendEventMessage(onClickData, 'unit_details_modal', onClickData);
+                            }
+        }   // Callback Options
+        );
+
+    // Auto-trigger 3D building view for 3D maps
+    if ('d2' === 'd3') {
+        setTimeout(function() {
+            // Wait a moment for 3D mode to activate, then set camera
+                setTimeout(function() {
+                    if (be && be.esriObj && be.esriObj.mapView) {
+                        var cameraSettings = {
+                            tilt: 60,
+                            heading: 60,
+                            height: 95,
+                            zoom: 18
+                        };
+                        be.esriObj.mapView.goTo(cameraSettings);
+                    }
+                }, 500); // Wait 500ms for 3D mode to activate
+
+        }, 2000); // Wait 2 seconds for map to load
+    }
+
+
+</script>
+
+<script type="text/javascript">
+    hideMapIfNotDefault();
+    // Hide if not the default map type
+    function hideMapIfNotDefault() {
+        if('d2' != 'd3') {
+            document.getElementById("beans-maps-1d2").style.visibility = 'hidden';
+        }
+   }
+</script>
+                        <style>
+    .property-map.d3 {
+        width: 100% !important;
+        height: 600px !important;
+    }
+</style>
+
+<div id="beans-maps-1d3"
+    class="property-map d3">
+</div>
+
+<script type="text/javascript">
+    var be = new BeansMap();
+    be.render(
+        "beans-maps-1d3",
+        "485a3872c67345c:6666663931663765636562663463393339353036",
+        [],
+        {"hideMyLocationButton":true,"camera":{"tilt":60,"heading":60,"zoom":18,"position":{"x":-111.88579999988,"y":40.48699999999,"z":95}}}, // Nav Options
+        {
+            'show2DButton': '1',
+            'show3DButton': '',
+            'event3D': show3DMap,
+            'event2D': show2DMap,
+            'beansMapType': 'ESRI',
+            'showUnitList': '1',
+            'propertyAddress': '3500 Clairmont Ave, Birmingham, AL, , 35222, US',
+            'showNumbers': '',
+            'hideSatelliteButton': '',
+            'hideRotateControl': '',
+            'hideBeansCard': '',
+            'hideFilters': '1',
+            'hideFloorSelector': '',
+            'hideShadow': '',
+            'modernBeansCard': true,
+            'modernButtons': true,
+            'showPOIButton': '1',
+            'showImmersive': '1',
+            'showImmersiveExterior': '1',
+            'outsideButtons': '1',
+            'noUnitsContent': "<div class=\"beans-filters-no-units-available-container\">\n\t<div class=\"no-units-available-icon-wrapper\">\n\t\t<svg class=\"pp-svg-icon no-units-available-icon\" aria-hidden=\"true\">\n\t\t\t<use xlink:href=\"\/Common\/website_templates\/_common\/fonts\/svg_sprite.svg#no-units-list-icon\"><\/use>\n\t\t<\/svg>\n\t<\/div>\n\t<h3 class=\"no-units-available-title\">No Units Currently<br>Available<\/h3>\n\t<\/div>\n",
+            'showUnitShape': '1',
+            'skipFirstSelect': '1',
+            'isSatelliteEnabledOnLoad': '',
+            'isNearbyEnabledOnLoad': '',
+            'showImmersiveOnLoad': '1',
+            'isShadowEnabledOnLoad': '',
+            'shadowOnLoadTs': '',
+            'selectableUnitShape': {"fillColor":"#6ed90b"},
+            'selectedUnitShape': {"fillColor":"#cc088e"},
+            'enableBurgerButton': '1',
+            'showFloorSlider': '1',
+            'showFullScreenMode': false,
+            'entrataPropertyId': 1128707
+        }, // Display Options
+        {
+            onSelect: (onClickData) => {
+                                    window.sendEventMessage(onClickData, 'unit_details_modal', onClickData);
+                            }
+        }   // Callback Options
+        );
+
+    // Auto-trigger 3D building view for 3D maps
+    if ('d3' === 'd3') {
+        setTimeout(function() {
+            // Wait a moment for 3D mode to activate, then set camera
+                setTimeout(function() {
+                    if (be && be.esriObj && be.esriObj.mapView) {
+                        var cameraSettings = {
+                            tilt: 60,
+                            heading: 60,
+                            height: 95,
+                            zoom: 18
+                        };
+                        be.esriObj.mapView.goTo(cameraSettings);
+                    }
+                }, 500); // Wait 500ms for 3D mode to activate
+
+        }, 2000); // Wait 2 seconds for map to load
+    }
+
+
+</script>
+
+<script type="text/javascript">
+    hideMapIfNotDefault();
+    // Hide if not the default map type
+    function hideMapIfNotDefault() {
+        if('d3' != 'd3') {
+            document.getElementById("beans-maps-1d3").style.visibility = 'hidden';
+        }
+   }
+</script>
+    
+<script>
+    
+</script>
+
+
+
