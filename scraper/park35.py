@@ -40,6 +40,7 @@ BEANS_MAP = (f"{BASE}/Apartments/module/property_info/action/view_beans_map/"
 FLOORPLAN_INDEX_PAGES = [f"{BASE}/", f"{BASE}/birmingham/park-35-on-clairmont-mt/conventional/"]
 DELAY_S = float(os.environ.get("REQUEST_DELAY_S", "4"))
 MOVE_IN_OFFSETS_DAYS = [int(x) for x in os.environ.get("MOVE_IN_OFFSETS", "7,14,30,45,60").split(",")]
+MAP_OFFSETS_DAYS = [int(x) for x in os.environ.get("MAP_OFFSETS", "45,75,105").split(",")]
 TZ = dt.timezone(dt.timedelta(hours=-6))  # America/Chicago standard time; date only
 
 BLOCK_MARKERS = ("Performing security verification", "Just a moment", "cf-chl", "Verify you are human")
@@ -121,7 +122,7 @@ class Fetcher:
 (async () => {
   const spec = JSON.parse(atob('%JOBS%'));
   const jobs = (spec.urls || []).map(u => ({url: u}));
-  for (const [us, fp] of (spec.calc_units || [])) for (const d of (spec.dates || []))
+  for (const [us, fp, ds] of (spec.calc_units || [])) for (const d of (ds || spec.dates || []))
     jobs.push({url: location.origin + '/?module=check_availability&is_secure=1&property[id]=%PID%&action=view_rent_calculator&unit_space[id]=' + us + '&property_floorplan[id]=' + fp + '&move_in_date=' + d + '&occupancy_type=conventional', xhr: true});
   const out = {};
   if (%MAP%) {
@@ -141,6 +142,25 @@ class Fetcher:
         }
       }
       out['__map__'] = {s: html ? 200 : 0, t: html || 'map iframe not found'};
+      const frame = [...document.querySelectorAll('iframe')].find(f => (f.src || '').includes('view_beans_map'));
+      for (const d of (spec.map_dates || [])) {
+        let h2 = null;
+        if (frame) {
+          const base = frame.src.replace(/&move_in_date=[^&]*/g, '');
+          frame.src = base + '&move_in_date=' + d;
+          for (let k = 0; k < 40 && !h2; k++) {
+            await new Promise(res => setTimeout(res, 500));
+            try {
+              const fd = frame.contentDocument;
+              if (fd && fd.readyState === 'complete' && fd.location.href.includes(d)) {
+                h2 = fd.querySelector('[data-url*="unit_space"]') ? fd.documentElement.outerHTML : (k > 10 ? '<html></html>' : null);
+              }
+            } catch (e) {}
+          }
+        }
+        out['__map__' + d] = {s: h2 ? 200 : 0, t: h2 || 'map iframe not found'};
+        await new Promise(res => setTimeout(res, 1200));
+      }
     } catch (e) { out['__map__'] = {s: 0, t: String(e)}; }
   }
   let i = 0;
@@ -359,6 +379,19 @@ def parse_calculator(html: str) -> dict:
 
 # ---------- main ----------
 
+def unit_move_ins(u: dict, today: dt.date) -> list[str]:
+    """Move-in dates to price: from the later of a week out and the unit's
+    available date, then +7, +14, +30 days."""
+    start = today + dt.timedelta(days=7)
+    a = u.get("available") or ""
+    try:
+        if a and a.lower() != "now":
+            start = max(start, dt.datetime.strptime(a, "%b %d, %Y").date())
+    except ValueError:
+        pass
+    return [(start + dt.timedelta(days=o)).isoformat() for o in (0, 7, 14, 30)]
+
+
 def calc_url(u: dict, move_in: str) -> str:
     return (f"{BASE}/?module=check_availability&is_secure=1&property[id]={PROPERTY_ID}"
             f"&action=view_rent_calculator&unit_space[id]={u['unit_space_id']}"
@@ -399,19 +432,29 @@ def main() -> int:
         print(f"mode: {snapshot['mode']}", file=sys.stderr)
 
         index_jobs = [{"url": u} for u in FLOORPLAN_INDEX_PAGES]
+        extra_maps = []
         if probe:
             round1, beans = get_many(index_jobs), probe
         else:
             # The map endpoint only answers inside the site's own iframe, so open the
             # floor plans page, click "Interactive Map", and read the iframe's DOM.
-            round1 = f.batch(index_jobs, start_url=FLOORPLAN_INDEX_PAGES[1], read_map=True)
+            map_dates = [(today + dt.timedelta(days=o)).isoformat() for o in MAP_OFFSETS_DAYS]
+            round1 = f.batch({"urls": [j["url"] for j in index_jobs], "map_dates": map_dates},
+                             start_url=FLOORPLAN_INDEX_PAGES[1], read_map=True)
             beans = round1.pop("__map__", None)
+            extra_maps = [round1.pop("__map__" + d, None) for d in map_dates]
         save_raw("beans_map.html", beans)
         if not beans:
             if any(MAINTENANCE_MARKER in v for v in round1.values()):
                 raise SiteDown("Entrata scheduled maintenance")
             raise RuntimeError("beans map fetch failed in both direct and browser-batch modes")
         units = parse_beans_map(beans)
+        seen = {u["unit_space_id"] for u in units}
+        for i, h in enumerate(extra_maps if not probe else []):
+            save_raw(f"beans_map_{MAP_OFFSETS_DAYS[i]}d.html", h)
+            for u in parse_beans_map(h or ""):
+                if u["unit_space_id"] not in seen:
+                    seen.add(u["unit_space_id"]); units.append(u)
         if not units:
             raise RuntimeError("beans map parsed 0 units; parser or page changed (see raw/beans_map.html)")
 
@@ -423,6 +466,12 @@ def main() -> int:
         fp_ids = sorted({u["floorplan_id"] for u in units if u["floorplan_id"]})
         fp_jobs = []
         for fp_id in fp_ids:
+            if fp_id not in fp_links:
+                # Entrata floor plan URLs follow <plan-name-slug>-<floorplan_id>-1
+                plan = next((u["floorplan"] for u in units if u["floorplan_id"] == fp_id and u["floorplan"]), None)
+                if plan:
+                    slug = re.sub(r"[^a-z0-9]+", "-", plan.lower()).strip("-")
+                    fp_links[fp_id] = f"{BASE}/floorplans/birmingham-AL/park-35-on-clairmont-mt/{slug}-{fp_id}-1/"
             if fp_id in fp_links:
                 fp_jobs.append({"url": fp_links[fp_id]})
             else:
@@ -455,18 +504,20 @@ def main() -> int:
             u["movein_prices"] = []
         # Round 3: rent calculator, one request at a time, only for 2BRs that aren't ruled out.
         calc_targets = [u for u in units if u["beds"] == 2 and u["meets_criteria"] is not False]
+        for u in calc_targets:
+            u["_move_ins"] = unit_move_ins(u, today)
         if snapshot["mode"] == "direct":
-            round3 = get_many([{"url": calc_url(u, d), "xhr": True} for u in calc_targets for d in move_ins])
+            round3 = get_many([{"url": calc_url(u, d), "xhr": True} for u in calc_targets for d in u["_move_ins"]])
         elif calc_targets:
-            round3 = f.batch({"calc_units": [[u["unit_space_id"], u["floorplan_id"]] for u in calc_targets],
-                              "dates": move_ins, "workers": 1, "gap_ms": 1500}, start_url=FLOORPLAN_INDEX_PAGES[1])
+            round3 = f.batch({"calc_units": [[u["unit_space_id"], u["floorplan_id"], u["_move_ins"]] for u in calc_targets],
+                              "workers": 1, "gap_ms": 1500}, start_url=FLOORPLAN_INDEX_PAGES[1])
         else:
             round3 = {}
         for u in units:
             if u in calc_targets:
-                for d in move_ins:
+                for d in u["_move_ins"]:
                     h = round3.get(calc_url(u, d))
-                    if d == move_ins[0]:
+                    if d == u["_move_ins"][0]:
                         save_raw(f"calc_{u['unit']}.html", h)
                     if not h:
                         continue
@@ -474,6 +525,7 @@ def main() -> int:
                     if c["base_rent"] and c["total_by_term"]:  # partial loads misreport base rent
                         u["movein_prices"].append({"move_in": d, **c})
             u["base_rent"] = u["movein_prices"][0]["base_rent"] if u["movein_prices"] else None
+            u.pop("_move_ins", None)
             snapshot["units"].append(u)
         n_calc = sum(len(u["movein_prices"]) for u in snapshot["units"])
         if calc_targets and n_calc == 0:
